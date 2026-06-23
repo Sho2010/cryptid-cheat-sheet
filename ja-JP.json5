@@ -4,8 +4,19 @@
 {
   app: {
     title: "Cryptid ヒント否定メモ",
-    reset: "このプレイヤーをリセット",
-    player: "Player",
+    reset: "この相手をリセット",
+    player: "相手",
+    swatch_aria: "の色を変更",
+  },
+
+  // タブの色サイクル(スワッチクリック順)。デフォルトは白(未割当)。
+  colors: {
+    white:     "白(未割当)",
+    red:       "赤",
+    darkgreen: "深緑",
+    purple:    "紫",
+    orange:    "オレンジ",
+    cyan:      "水色",
   },
 
   sections: {
