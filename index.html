@@ -39,16 +39,44 @@
       font-weight: 600;
     }
 
+    :root { --current-color: #ffffff; }
+    :root[data-current-color="red"]       { --current-color: #dc2626; }
+    :root[data-current-color="darkgreen"] { --current-color: #166534; }
+    :root[data-current-color="purple"]    { --current-color: #7c3aed; }
+    :root[data-current-color="orange"]    { --current-color: #ea580c; }
+    :root[data-current-color="cyan"]      { --current-color: #0ea5e9; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--panel-bg);
+      border-bottom: 1px solid var(--border);
+    }
     .tabs {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
       padding: 10px 16px;
       background: var(--panel-bg);
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 10;
+    }
+    .current-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--panel-bg);
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .current-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: var(--current-color);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
     }
     .tab-pair {
       --player-color: #ffffff;
@@ -120,6 +148,18 @@
       background: var(--panel-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .clue-section::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      background: var(--current-color);
+    }
+    :root[data-current-color="white"] .clue-section::before {
+      background: var(--border);
     }
     .clue-section legend {
       font-weight: 600;
@@ -172,25 +212,31 @@
 <body>
   <header><h1>Cryptid ヒント否定メモ</h1></header>
 
-  <nav class="tabs" role="tablist">
-    <span class="tab-pair" data-player="1" data-color="white">
-      <button class="swatch" type="button" data-player="1" aria-label="相手1の色を変更"></button>
-      <button class="tab" type="button" data-player="1" aria-selected="true">相手1</button>
-    </span>
-    <span class="tab-pair" data-player="2" data-color="white">
-      <button class="swatch" type="button" data-player="2" aria-label="相手2の色を変更"></button>
-      <button class="tab" type="button" data-player="2" aria-selected="false">相手2</button>
-    </span>
-    <span class="tab-pair" data-player="3" data-color="white">
-      <button class="swatch" type="button" data-player="3" aria-label="相手3の色を変更"></button>
-      <button class="tab" type="button" data-player="3" aria-selected="false">相手3</button>
-    </span>
-    <span class="tab-pair" data-player="4" data-color="white">
-      <button class="swatch" type="button" data-player="4" aria-label="相手4の色を変更"></button>
-      <button class="tab" type="button" data-player="4" aria-selected="false">相手4</button>
-    </span>
-    <button class="reset" type="button">この相手をリセット</button>
-  </nav>
+  <div class="topbar">
+    <nav class="tabs" role="tablist">
+      <span class="tab-pair" data-player="1" data-color="white">
+        <button class="swatch" type="button" data-player="1" aria-label="相手1の色を変更"></button>
+        <button class="tab" type="button" data-player="1" aria-selected="true">相手1</button>
+      </span>
+      <span class="tab-pair" data-player="2" data-color="white">
+        <button class="swatch" type="button" data-player="2" aria-label="相手2の色を変更"></button>
+        <button class="tab" type="button" data-player="2" aria-selected="false">相手2</button>
+      </span>
+      <span class="tab-pair" data-player="3" data-color="white">
+        <button class="swatch" type="button" data-player="3" aria-label="相手3の色を変更"></button>
+        <button class="tab" type="button" data-player="3" aria-selected="false">相手3</button>
+      </span>
+      <span class="tab-pair" data-player="4" data-color="white">
+        <button class="swatch" type="button" data-player="4" aria-label="相手4の色を変更"></button>
+        <button class="tab" type="button" data-player="4" aria-selected="false">相手4</button>
+      </span>
+      <button class="reset" type="button">この相手をリセット</button>
+    </nav>
+    <div class="current-indicator" aria-live="polite">
+      <span class="current-dot"></span>
+      <span class="current-label">相手1</span> のヒント
+    </div>
+  </div>
 
   <main></main>
 
@@ -377,6 +423,7 @@
       const idx = COLOR_CYCLE.indexOf(pair.dataset.color);
       const next = COLOR_CYCLE[(idx + 1) % COLOR_CYCLE.length];
       pair.dataset.color = next;
+      syncCurrent();
       saveState();
     }
 
@@ -389,7 +436,17 @@
       panels.forEach(panel => {
         panel.hidden = panel.dataset.player !== String(playerIdx);
       });
+      syncCurrent();
       if (opts.save) saveState();
+    }
+
+    function syncCurrent() {
+      const activeTab = tabsEl.querySelector('.tab[aria-selected="true"]');
+      const playerIdx = activeTab?.dataset.player ?? '1';
+      const pair = tabsEl.querySelector(`.tab-pair[data-player="${playerIdx}"]`);
+      document.documentElement.dataset.currentColor = pair?.dataset.color ?? 'white';
+      const labelEl = document.querySelector('.current-label');
+      if (labelEl) labelEl.textContent = `相手${playerIdx}`;
     }
 
     function resetCurrentPlayer() {
