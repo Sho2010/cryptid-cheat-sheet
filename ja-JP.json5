@@ -1,0 +1,54 @@
+// 実装上の英語ID(index.html 内の section.id / clue.id)と日本語ラベルの対応表。
+// このファイルは動的に読み込まれません。index.html 内のラベルが正本です。
+// 実装と表記の対応を確認したいときの参照用ドキュメントです。
+{
+  app: {
+    title: "Cryptid ヒント否定メモ",
+    reset: "このプレイヤーをリセット",
+    player: "Player",
+  },
+
+  sections: {
+    terrain:        "地形(2種類のどちらか)",
+    within_terrain: "1マス以内に特定地形",
+    animal:         "動物の縄張り",
+    structure:      "建造物",
+    color:          "建造物の色",
+  },
+
+  clues: {
+    // Terrain (10)
+    forest_desert:   "森または砂漠",
+    forest_water:    "森または水辺",
+    forest_swamp:    "森または沼",
+    forest_mountain: "森または山",
+    desert_water:    "砂漠または水辺",
+    desert_swamp:    "砂漠または沼",
+    desert_mountain: "砂漠または山",
+    water_swamp:     "水辺または沼",
+    water_mountain:  "水辺または山",
+    swamp_mountain:  "沼または山",
+
+    // Within Terrain (5)
+    within1_forest:   "森から1マス以内",
+    within1_desert:   "砂漠から1マス以内",
+    within1_swamp:    "沼から1マス以内",
+    within1_mountain: "山から1マス以内",
+    within1_water:    "水域から1マス以内",
+
+    // Animal (3)
+    within1_any_animal: "いずれかの動物の縄張りから1マス以内",
+    within2_cougar:     "ワシの縄張りから2マス以内",
+    within2_bear:       "クマの縄張りから2マス以内",
+
+    // Structure (2)
+    within2_abandoned_shack: "廃墟から2マス以内",
+    within2_standing_stone:  "巨石から2マス以内",
+
+    // Color (4)
+    within3_blue:  "青色の建造物から3マス以内",
+    within3_white: "白色の建造物から3マス以内",
+    within3_green: "緑色の建造物から3マス以内",
+    within3_black: "黒色の建造物から3マス以内",
+  },
+}

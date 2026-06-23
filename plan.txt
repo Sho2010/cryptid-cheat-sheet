@@ -11,7 +11,7 @@
 - ユーザーのステートは現時点で考えない、最低限リロードしたときに、入力状態が保持されてれば良い
 - 実装時の命名はRuleBook/ClueBookの用語に従います。
 - 現時点ではAdvancedルール(inverseの追加)は考えない
-- ルールの一覧は `@master-data.txt` を参照, 実際のゲーム内のドキュメントは @cryptid-cluebooks.pdf
+- ルールの一覧は `@master-data.txt` を参照, 実際のゲーム内のドキュメントは @cryptid-cluebooks.pdfの最終ページを参照
 
 ## UI
 

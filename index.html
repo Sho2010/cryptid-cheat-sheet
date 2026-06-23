@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cryptid ヒント否定メモ</title>
+  <style>
+    :root {
+      --fg: #1f2328;
+      --muted: #6b7280;
+      --bg: #fafafa;
+      --panel-bg: #ffffff;
+      --border: #e5e7eb;
+      --accent: #2563eb;
+      --accent-fg: #ffffff;
+      --strike-fg: #9aa0a6;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans CJK JP", "Yu Gothic", Meiryo, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel-bg);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 10px 16px;
+      background: var(--panel-bg);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .tab {
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--fg);
+      border-radius: 999px;
+      cursor: pointer;
+      font: inherit;
+    }
+    .tab[aria-selected="true"] {
+      background: var(--accent);
+      color: var(--accent-fg);
+      border-color: var(--accent);
+    }
+    .reset {
+      margin-left: auto;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--muted);
+      border-radius: 6px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+    }
+    .reset:hover { color: var(--fg); }
+
+    main {
+      padding: 16px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .player-panel[hidden] { display: none; }
+
+    .clue-section {
+      border: 0;
+      padding: 0;
+      margin: 0 0 20px 0;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .clue-section legend {
+      font-weight: 600;
+      font-size: 14px;
+      padding: 10px 14px;
+      width: 100%;
+      box-sizing: border-box;
+      background: #f3f4f6;
+      border-radius: 8px 8px 0 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .clue-list {
+      list-style: none;
+      margin: 0;
+      padding: 6px 0;
+    }
+    .clue {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+    }
+    .clue + .clue { border-top: 1px solid #f3f4f6; }
+    .clue input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .clue label {
+      cursor: pointer;
+      flex: 1;
+    }
+    .clue:has(input[type="checkbox"]:checked) label {
+      text-decoration: line-through;
+      color: var(--strike-fg);
+    }
+
+    @media (max-width: 480px) {
+      header h1 { font-size: 16px; }
+      .tabs { padding: 8px 10px; }
+      .tab { padding: 5px 10px; font-size: 13px; }
+      main { padding: 10px; }
+      .clue { padding: 8px 10px; }
+    }
+  </style>
+</head>
+<body>
+  <header><h1>Cryptid ヒント否定メモ</h1></header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" type="button" data-player="1" aria-selected="true">Player 1</button>
+    <button class="tab" type="button" data-player="2" aria-selected="false">Player 2</button>
+    <button class="tab" type="button" data-player="3" aria-selected="false">Player 3</button>
+    <button class="tab" type="button" data-player="4" aria-selected="false">Player 4</button>
+    <button class="reset" type="button">このプレイヤーをリセット</button>
+  </nav>
+
+  <main></main>
+
+  <script>
+    'use strict';
+
+    const STORAGE_KEY = 'cryptid-cheat-sheet';
+    const PLAYER_COUNT = 4;
+
+    const CLUE_BOOK = [
+      { id: 'terrain', label: '地形(2種類のどちらか)', clues: [
+        { id: 'forest_desert',   label: '森または砂漠' },
+        { id: 'forest_water',    label: '森または水辺' },
+        { id: 'forest_swamp',    label: '森または沼' },
+        { id: 'forest_mountain', label: '森または山' },
+        { id: 'desert_water',    label: '砂漠または水辺' },
+        { id: 'desert_swamp',    label: '砂漠または沼' },
+        { id: 'desert_mountain', label: '砂漠または山' },
+        { id: 'water_swamp',     label: '水辺または沼' },
+        { id: 'water_mountain',  label: '水辺または山' },
+        { id: 'swamp_mountain',  label: '沼または山' },
+      ]},
+      { id: 'within_terrain', label: '1マス以内に特定地形', clues: [
+        { id: 'within1_forest',   label: '森から1マス以内' },
+        { id: 'within1_desert',   label: '砂漠から1マス以内' },
+        { id: 'within1_swamp',    label: '沼から1マス以内' },
+        { id: 'within1_mountain', label: '山から1マス以内' },
+        { id: 'within1_water',    label: '水域から1マス以内' },
+      ]},
+      { id: 'animal', label: '動物の縄張り', clues: [
+        { id: 'within1_any_animal', label: 'いずれかの動物の縄張りから1マス以内' },
+        { id: 'within2_cougar',     label: 'ワシの縄張りから2マス以内' },
+        { id: 'within2_bear',       label: 'クマの縄張りから2マス以内' },
+      ]},
+      { id: 'structure', label: '建造物', clues: [
+        { id: 'within2_abandoned_shack', label: '廃墟から2マス以内' },
+        { id: 'within2_standing_stone',  label: '巨石から2マス以内' },
+      ]},
+      { id: 'color', label: '建造物の色', clues: [
+        { id: 'within3_blue',  label: '青色の建造物から3マス以内' },
+        { id: 'within3_white', label: '白色の建造物から3マス以内' },
+        { id: 'within3_green', label: '緑色の建造物から3マス以内' },
+        { id: 'within3_black', label: '黒色の建造物から3マス以内' },
+      ]},
+    ];
+
+    const main = document.querySelector('main');
+    const tabsEl = document.querySelector('.tabs');
+    const resetBtn = document.querySelector('.reset');
+
+    function buildDom() {
+      const frag = document.createDocumentFragment();
+      for (let p = 1; p <= PLAYER_COUNT; p++) {
+        const panel = document.createElement('section');
+        panel.className = 'player-panel';
+        panel.dataset.player = String(p);
+        if (p !== 1) panel.hidden = true;
+
+        for (const section of CLUE_BOOK) {
+          const fs = document.createElement('fieldset');
+          fs.className = 'clue-section';
+          fs.dataset.section = section.id;
+
+          const legend = document.createElement('legend');
+          legend.textContent = section.label;
+          fs.appendChild(legend);
+
+          const ul = document.createElement('ul');
+          ul.className = 'clue-list';
+
+          for (const clue of section.clues) {
+            const li = document.createElement('li');
+            li.className = 'clue';
+
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.id = `p${p}-${clue.id}`;
+            input.dataset.player = String(p);
+            input.dataset.clueId = clue.id;
+
+            const label = document.createElement('label');
+            label.htmlFor = input.id;
+            label.textContent = clue.label;
+
+            li.appendChild(input);
+            li.appendChild(label);
+            ul.appendChild(li);
+          }
+          fs.appendChild(ul);
+          panel.appendChild(fs);
+        }
+        frag.appendChild(panel);
+      }
+      main.appendChild(frag);
+    }
+
+    function emptyState() {
+      const players = {};
+      for (let p = 1; p <= PLAYER_COUNT; p++) players[p] = [];
+      return { activePlayer: 1, players };
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return emptyState();
+        const parsed = JSON.parse(raw);
+        const state = emptyState();
+        if (parsed && typeof parsed === 'object') {
+          if (Number.isInteger(parsed.activePlayer)
+              && parsed.activePlayer >= 1
+              && parsed.activePlayer <= PLAYER_COUNT) {
+            state.activePlayer = parsed.activePlayer;
+          }
+          if (parsed.players && typeof parsed.players === 'object') {
+            for (let p = 1; p <= PLAYER_COUNT; p++) {
+              const arr = parsed.players[p];
+              if (Array.isArray(arr)) {
+                state.players[p] = arr.filter(x => typeof x === 'string');
+              }
+            }
+          }
+        }
+        return state;
+      } catch {
+        return emptyState();
+      }
+    }
+
+    function readCurrentState() {
+      const state = emptyState();
+      const activeTab = tabsEl.querySelector('.tab[aria-selected="true"]');
+      state.activePlayer = activeTab ? Number(activeTab.dataset.player) : 1;
+      const inputs = main.querySelectorAll('input[type="checkbox"]');
+      for (const input of inputs) {
+        if (input.checked) {
+          const p = input.dataset.player;
+          state.players[p].push(input.dataset.clueId);
+        }
+      }
+      return state;
+    }
+
+    function saveState() {
+      const state = readCurrentState();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function applyState(state) {
+      const inputs = main.querySelectorAll('input[type="checkbox"]');
+      for (const input of inputs) {
+        const checked = state.players[input.dataset.player]?.includes(input.dataset.clueId) ?? false;
+        input.checked = checked;
+      }
+      activateTab(state.activePlayer, { save: false });
+    }
+
+    function activateTab(playerIdx, opts = { save: true }) {
+      const tabs = tabsEl.querySelectorAll('.tab');
+      tabs.forEach(t => {
+        t.setAttribute('aria-selected', t.dataset.player === String(playerIdx) ? 'true' : 'false');
+      });
+      const panels = main.querySelectorAll('.player-panel');
+      panels.forEach(panel => {
+        panel.hidden = panel.dataset.player !== String(playerIdx);
+      });
+      if (opts.save) saveState();
+    }
+
+    function resetCurrentPlayer() {
+      const activeTab = tabsEl.querySelector('.tab[aria-selected="true"]');
+      const playerIdx = activeTab ? activeTab.dataset.player : '1';
+      const panel = main.querySelector(`.player-panel[data-player="${playerIdx}"]`);
+      if (!panel) return;
+      panel.querySelectorAll('input[type="checkbox"]').forEach(i => { i.checked = false; });
+      saveState();
+    }
+
+    function init() {
+      buildDom();
+      applyState(loadState());
+
+      main.addEventListener('change', e => {
+        if (e.target instanceof HTMLInputElement && e.target.type === 'checkbox') {
+          saveState();
+        }
+      });
+
+      tabsEl.addEventListener('click', e => {
+        const tab = e.target.closest('.tab');
+        if (!tab) return;
+        activateTab(Number(tab.dataset.player));
+      });
+
+      resetBtn.addEventListener('click', resetCurrentPlayer);
+    }
+
+    init();
+  </script>
+</body>
+</html>
