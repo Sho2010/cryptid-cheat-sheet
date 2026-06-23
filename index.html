@@ -420,9 +420,19 @@
     function cycleColor(playerIdx) {
       const pair = tabsEl.querySelector(`.tab-pair[data-player="${playerIdx}"]`);
       if (!pair) return;
-      const idx = COLOR_CYCLE.indexOf(pair.dataset.color);
-      const next = COLOR_CYCLE[(idx + 1) % COLOR_CYCLE.length];
-      pair.dataset.color = next;
+      const taken = new Set();
+      for (const other of tabsEl.querySelectorAll('.tab-pair')) {
+        if (other === pair) continue;
+        if (other.dataset.color !== 'white') taken.add(other.dataset.color);
+      }
+      const startIdx = COLOR_CYCLE.indexOf(pair.dataset.color);
+      for (let i = 1; i <= COLOR_CYCLE.length; i++) {
+        const candidate = COLOR_CYCLE[(startIdx + i) % COLOR_CYCLE.length];
+        if (candidate === 'white' || !taken.has(candidate)) {
+          pair.dataset.color = candidate;
+          break;
+        }
+      }
       syncCurrent();
       saveState();
     }
