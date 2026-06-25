@@ -1,5 +1,66 @@
+// Mapping table between implementation IDs (section.id / clue.id in index.html)
+// and English labels. This file is not loaded dynamically; the labels in
+// index.html are authoritative. Use this as a reference document to confirm
+// the correspondence between implementation and notation.
 {
-  "forest": "forest"
-  "section_terrain": "On one of two types of terrain"
-}
+  app: {
+    title: "Cryptid Clue Notes",
+    reset: "Reset this opponent",
+    player: "Opponent",
+    swatch_aria: " — change colour",
+  },
 
+  // Tab colour cycle (swatch click order). Default is white (unassigned).
+  colors: {
+    white:     "White (unassigned)",
+    red:       "Red",
+    darkgreen: "Dark green",
+    purple:    "Purple",
+    orange:    "Orange",
+    cyan:      "Cyan",
+  },
+
+  sections: {
+    terrain:        "On one of two types of terrain",
+    within_terrain: "Within one space of a terrain type",
+    animal:         "Animal territory",
+    structure:      "Structure",
+    color:          "Structure colour",
+  },
+
+  clues: {
+    // Terrain (10)
+    forest_desert:   "On forest or desert",
+    forest_water:    "On forest or water",
+    forest_swamp:    "On forest or swamp",
+    forest_mountain: "On forest or mountain",
+    desert_water:    "On desert or water",
+    desert_swamp:    "On desert or swamp",
+    desert_mountain: "On desert or mountain",
+    water_swamp:     "On water or swamp",
+    water_mountain:  "On water or mountain",
+    swamp_mountain:  "On swamp or mountain",
+
+    // Within Terrain (5)
+    within1_forest:   "Within one space of forest",
+    within1_desert:   "Within one space of desert",
+    within1_swamp:    "Within one space of swamp",
+    within1_mountain: "Within one space of mountain",
+    within1_water:    "Within one space of water",
+
+    // Animal (3)
+    within1_any_animal: "Within one space of either animal territory",
+    within2_cougar:     "Within two spaces of cougar territory",
+    within2_bear:       "Within two spaces of bear territory",
+
+    // Structure (2)
+    within2_abandoned_shack: "Within two spaces of an abandoned shack",
+    within2_standing_stone:  "Within two spaces of a standing stone",
+
+    // Color (4)
+    within3_blue:  "Within three spaces of a blue structure",
+    within3_white: "Within three spaces of a white structure",
+    within3_green: "Within three spaces of a green structure",
+    within3_black: "Within three spaces of a black structure",
+  },
+}
