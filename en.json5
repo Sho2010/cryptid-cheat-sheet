@@ -21,11 +21,21 @@
   },
 
   sections: {
+    bulk_check:     "Bulk check",
     terrain:        "On one of two types of terrain",
     within_terrain: "Within one space of a terrain type",
     animal:         "Animal territory",
     structure:      "Structure",
     color:          "Structure colour",
+  },
+
+  // Atoms used by the bulk-check section to toggle all related clues across sections
+  atoms: {
+    forest:   "Forest",
+    desert:   "Desert",
+    water:    "Water",
+    swamp:    "Swamp",
+    mountain: "Mountain",
   },
 
   clues: {

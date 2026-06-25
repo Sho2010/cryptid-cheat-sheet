@@ -20,11 +20,21 @@
   },
 
   sections: {
+    bulk_check:     "一括チェック",
     terrain:        "地形(2種類のどちらか)",
     within_terrain: "1マス以内に特定地形",
     animal:         "動物の縄張り",
     structure:      "建造物",
     color:          "建造物の色",
+  },
+
+  // 一括チェック用 atom(セクション横断で関連 clue をまとめて toggle)
+  atoms: {
+    forest:   "森",
+    desert:   "砂漠",
+    water:    "水辺",
+    swamp:    "沼",
+    mountain: "山",
   },
 
   clues: {

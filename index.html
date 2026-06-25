@@ -94,7 +94,7 @@
       height: 16px;
       cursor: pointer;
     }
-    :root[data-hide-checked="true"] .clue:has(input[type="checkbox"]:checked) {
+    :root[data-hide-checked="true"] .clue:not(.bulk-item):has(input[type="checkbox"]:checked) {
       display: none;
     }
     .tab-pair {
@@ -217,7 +217,29 @@
       text-decoration: line-through;
       color: var(--strike-fg);
     }
-
+    .bulk-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 4px;
+      padding: 10px 14px;
+    }
+    .bulk-item {
+      flex: 0 0 auto;
+      padding: 4px 10px 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: #fff;
+    }
+    .bulk-item + .bulk-item { border-top: 1px solid var(--border); }
+    .bulk-item label { flex: 0 0 auto; font-weight: 500; }
+    .bulk-item:has(input[type="checkbox"]:checked) {
+      background: #eef2ff;
+      border-color: #c7d2fe;
+    }
+    .bulk-item:has(input[type="checkbox"]:checked) label {
+      text-decoration: none;
+      color: var(--fg);
+    }
     @media (max-width: 480px) {
       header h1 { font-size: 16px; }
       .tabs { padding: 8px 10px; }
@@ -308,10 +330,52 @@
       ]},
     ];
 
+    const ATOMS = [
+      { id: 'forest',   label: '森',   clueIds: ['forest_desert', 'forest_water', 'forest_swamp', 'forest_mountain', 'within1_forest'] },
+      { id: 'desert',   label: '砂漠', clueIds: ['forest_desert', 'desert_water', 'desert_swamp', 'desert_mountain', 'within1_desert'] },
+      { id: 'water',    label: '水辺', clueIds: ['forest_water', 'desert_water', 'water_swamp', 'water_mountain', 'within1_water'] },
+      { id: 'swamp',    label: '沼',   clueIds: ['forest_swamp', 'desert_swamp', 'water_swamp', 'swamp_mountain', 'within1_swamp'] },
+      { id: 'mountain', label: '山',   clueIds: ['forest_mountain', 'desert_mountain', 'water_mountain', 'swamp_mountain', 'within1_mountain'] },
+    ];
+
     const main = document.querySelector('main');
     const tabsEl = document.querySelector('.tabs');
     const resetBtn = document.querySelector('.reset');
     const hideCheckedEl = document.querySelector('#hide-checked');
+
+    function buildBulkSection(p) {
+      const fs = document.createElement('fieldset');
+      fs.className = 'clue-section bulk-section';
+      fs.dataset.section = 'bulk_check';
+
+      const legend = document.createElement('legend');
+      legend.textContent = '一括チェック';
+      fs.appendChild(legend);
+
+      const ul = document.createElement('ul');
+      ul.className = 'clue-list bulk-list';
+
+      for (const atom of ATOMS) {
+        const li = document.createElement('li');
+        li.className = 'clue bulk-item';
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.id = `p${p}-master-${atom.id}`;
+        input.dataset.player = String(p);
+        input.dataset.master = atom.id;
+
+        const label = document.createElement('label');
+        label.htmlFor = input.id;
+        label.textContent = atom.label;
+
+        li.appendChild(input);
+        li.appendChild(label);
+        ul.appendChild(li);
+      }
+      fs.appendChild(ul);
+      return fs;
+    }
 
     function buildDom() {
       const frag = document.createDocumentFragment();
@@ -320,6 +384,8 @@
         panel.className = 'player-panel';
         panel.dataset.player = String(p);
         if (p !== 1) panel.hidden = true;
+
+        panel.appendChild(buildBulkSection(p));
 
         for (const section of CLUE_BOOK) {
           const fs = document.createElement('fieldset');
@@ -411,7 +477,7 @@
       const state = emptyState();
       const activeTab = tabsEl.querySelector('.tab[aria-selected="true"]');
       state.activePlayer = activeTab ? Number(activeTab.dataset.player) : 1;
-      const inputs = main.querySelectorAll('input[type="checkbox"]');
+      const inputs = main.querySelectorAll('input[type="checkbox"][data-clue-id]');
       for (const input of inputs) {
         if (input.checked) {
           const p = input.dataset.player;
@@ -433,7 +499,7 @@
     }
 
     function applyState(state) {
-      const inputs = main.querySelectorAll('input[type="checkbox"]');
+      const inputs = main.querySelectorAll('input[type="checkbox"][data-clue-id]');
       for (const input of inputs) {
         const checked = state.players[input.dataset.player]?.includes(input.dataset.clueId) ?? false;
         input.checked = checked;
@@ -444,7 +510,47 @@
       }
       hideCheckedEl.checked = !!state.hideChecked;
       document.documentElement.dataset.hideChecked = String(!!state.hideChecked);
+      syncAllMasters();
       activateTab(state.activePlayer, { save: false });
+    }
+
+    function syncMastersFor(playerIdx) {
+      const panel = main.querySelector(`.player-panel[data-player="${playerIdx}"]`);
+      if (!panel) return;
+      for (const atom of ATOMS) {
+        const master = panel.querySelector(`input[data-master="${atom.id}"]`);
+        if (!master) continue;
+        let checkedCount = 0;
+        for (const clueId of atom.clueIds) {
+          const clue = panel.querySelector(`input[data-clue-id="${clueId}"]`);
+          if (clue && clue.checked) checkedCount++;
+        }
+        master.checked = checkedCount === atom.clueIds.length;
+        master.indeterminate = false;
+      }
+    }
+
+    function syncAllMasters() {
+      for (let p = 1; p <= PLAYER_COUNT; p++) syncMastersFor(p);
+    }
+
+    function applyMaster(playerIdx, atomId) {
+      const atom = ATOMS.find(a => a.id === atomId);
+      if (!atom) return;
+      const panel = main.querySelector(`.player-panel[data-player="${playerIdx}"]`);
+      if (!panel) return;
+      const clueInputs = [];
+      let checkedCount = 0;
+      for (const clueId of atom.clueIds) {
+        const clue = panel.querySelector(`input[data-clue-id="${clueId}"]`);
+        if (!clue) continue;
+        clueInputs.push(clue);
+        if (clue.checked) checkedCount++;
+      }
+      const shouldCheck = checkedCount !== clueInputs.length;
+      for (const clue of clueInputs) clue.checked = shouldCheck;
+      syncMastersFor(playerIdx);
+      saveState();
     }
 
     function cycleColor(playerIdx) {
@@ -494,7 +600,10 @@
       const playerIdx = activeTab ? activeTab.dataset.player : '1';
       const panel = main.querySelector(`.player-panel[data-player="${playerIdx}"]`);
       if (!panel) return;
-      panel.querySelectorAll('input[type="checkbox"]').forEach(i => { i.checked = false; });
+      panel.querySelectorAll('input[type="checkbox"]').forEach(i => {
+        i.checked = false;
+        i.indeterminate = false;
+      });
       saveState();
     }
 
@@ -503,7 +612,14 @@
       applyState(loadState());
 
       main.addEventListener('change', e => {
-        if (e.target instanceof HTMLInputElement && e.target.type === 'checkbox') {
+        const target = e.target;
+        if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') return;
+        if (target.dataset.master) {
+          applyMaster(target.dataset.player, target.dataset.master);
+          return;
+        }
+        if (target.dataset.clueId) {
+          syncMastersFor(target.dataset.player);
           saveState();
         }
       });
