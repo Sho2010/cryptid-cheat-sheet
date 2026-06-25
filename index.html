@@ -78,6 +78,25 @@
       border: 1px solid var(--border);
       flex-shrink: 0;
     }
+    .hide-checked-toggle {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      user-select: none;
+    }
+    .hide-checked-toggle input {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+    :root[data-hide-checked="true"] .clue:has(input[type="checkbox"]:checked) {
+      display: none;
+    }
     .tab-pair {
       --player-color: #ffffff;
       display: inline-flex;
@@ -234,7 +253,11 @@
     </nav>
     <div class="current-indicator" aria-live="polite">
       <span class="current-dot"></span>
-      <span class="current-label">相手1</span> のヒント
+      <span><span class="current-label">相手1</span> のヒント</span>
+      <label class="hide-checked-toggle">
+        <input type="checkbox" id="hide-checked">
+        チェック済みを隠す
+      </label>
     </div>
   </div>
 
@@ -266,7 +289,7 @@
         { id: 'within1_desert',   label: '砂漠から1マス以内' },
         { id: 'within1_swamp',    label: '沼から1マス以内' },
         { id: 'within1_mountain', label: '山から1マス以内' },
-        { id: 'within1_water',    label: '水域から1マス以内' },
+        { id: 'within1_water',    label: '水辺から1マス以内' },
       ]},
       { id: 'animal', label: '動物の縄張り', clues: [
         { id: 'within1_any_animal', label: 'いずれかの動物の縄張りから1マス以内' },
@@ -288,6 +311,7 @@
     const main = document.querySelector('main');
     const tabsEl = document.querySelector('.tabs');
     const resetBtn = document.querySelector('.reset');
+    const hideCheckedEl = document.querySelector('#hide-checked');
 
     function buildDom() {
       const frag = document.createDocumentFragment();
@@ -342,7 +366,7 @@
         players[p] = [];
         playerColors[p] = 'white';
       }
-      return { activePlayer: 1, players, playerColors };
+      return { activePlayer: 1, players, playerColors, hideChecked: false };
     }
 
     function loadState() {
@@ -373,6 +397,9 @@
               }
             }
           }
+          if (typeof parsed.hideChecked === 'boolean') {
+            state.hideChecked = parsed.hideChecked;
+          }
         }
         return state;
       } catch {
@@ -396,6 +423,7 @@
         const c = pair.dataset.color;
         if (VALID_COLORS.has(c)) state.playerColors[p] = c;
       }
+      state.hideChecked = hideCheckedEl.checked;
       return state;
     }
 
@@ -414,6 +442,8 @@
         const p = pair.dataset.player;
         pair.dataset.color = state.playerColors[p] ?? 'white';
       }
+      hideCheckedEl.checked = !!state.hideChecked;
+      document.documentElement.dataset.hideChecked = String(!!state.hideChecked);
       activateTab(state.activePlayer, { save: false });
     }
 
@@ -491,6 +521,11 @@
       });
 
       resetBtn.addEventListener('click', resetCurrentPlayer);
+
+      hideCheckedEl.addEventListener('change', () => {
+        document.documentElement.dataset.hideChecked = String(hideCheckedEl.checked);
+        saveState();
+      });
     }
 
     init();
